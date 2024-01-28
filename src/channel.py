@@ -9,16 +9,21 @@ class Channel:
     """Класс для ютуб-канала"""
 
     api_key: str = os.getenv('YT_API_KEY')
-    youtube = build('youtube', 'v3', developerKey=api_key)
 
     def __init__(self, channel_id: str) -> None:
         """Экземпляр инициализируется id канала. Дальше все данные будут подтягиваться по API."""
-        self.channel_id = channel_id
+        self.__channel_id = channel_id
+        self.title = self.get_attributes()['items'][0]['snippet']['title']
+        self.description = self.get_attributes()['items'][0]['snippet']['description']
+        self.url = f'https://www.youtube.com/channel/{self.__channel_id}'
+        self.subscriber_count = self.get_attributes()['items'][0]['statistics']['subscriberCount']
+        self.video_count = self.get_attributes()['items'][0]['statistics']['videoCount']
+        self.view_count = self.get_attributes()['items'][0]['statistics']['viewCount']
 
     def get_response(self):
-        request = self.youtube.channels().list(
+        request = self.get_service().channels().list(
             part="snippet,contentDetails,statistics",
-            id=self.channel_id
+            id=self.__channel_id
         )
         response = request.execute()
 
@@ -26,4 +31,40 @@ class Channel:
 
     def print_info(self) -> None:
         """Выводит в консоль информацию о канале."""
+
         print(json.dumps(Channel.get_response(self), indent=2, ensure_ascii=False))
+
+    def get_attributes(self):
+        """Получаем из json Python объект из которого будем забирать значения аттрибутов класса"""
+
+        file = json.dumps(Channel.get_response(self), indent=2, ensure_ascii=False)
+        new_file = json.loads(file)
+        return new_file
+
+    @property
+    def channel_id(self):
+        """Делаем аттрибут channel_id защищенным"""
+
+        return self.__channel_id
+
+    @classmethod
+    def get_service(cls):
+        """Метод для получения объекта для работы с API вне класса"""
+
+        return build('youtube', 'v3', developerKey=Channel.api_key)
+
+    def to_json(self, file):
+        """Функция для записи аттрибутов класса в json файл"""
+
+        attributes = {}
+        attributes['channel_id'] = self.__channel_id
+        attributes['title'] = self.title
+        attributes['description'] = self.description
+        attributes['url'] = self.url
+        attributes['subscriber_count'] = self.subscriber_count
+        attributes['video_count'] = self.video_count
+        attributes['view_count'] = self.view_count
+        with open(file, 'w') as f:
+            json.dump(attributes, f)
+
+
