@@ -1,14 +1,9 @@
 import json
-import os
-from googleapiclient.discovery import build
-
-import isodate
+from src.mixin import APIMixin
 
 
-class Channel:
+class Channel(APIMixin):
     """Класс для ютуб-канала"""
-
-    api_key: str = os.getenv('YT_API_KEY')
 
     def __init__(self, channel_id: str) -> None:
         """Экземпляр инициализируется id канала. Дальше все данные будут подтягиваться по API."""
@@ -21,7 +16,7 @@ class Channel:
         self.view_count = self.get_attributes()['items'][0]['statistics']['viewCount']
 
     def __str__(self):
-        return f'{self.title} ({self.url})'
+        return f'{self.title}'
 
     def __add__(self, other):
         return int(self.subscriber_count) + int(other.subscriber_count)
@@ -71,12 +66,6 @@ class Channel:
 
         return self.__channel_id
 
-    @classmethod
-    def get_service(cls):
-        """Метод для получения объекта для работы с API вне класса"""
-
-        return build('youtube', 'v3', developerKey=Channel.api_key)
-
     def to_json(self, file):
         """Функция для записи аттрибутов класса в json файл"""
 
@@ -90,5 +79,3 @@ class Channel:
         attributes['view_count'] = self.view_count
         with open(file, 'w') as f:
             json.dump(attributes, f)
-
-
